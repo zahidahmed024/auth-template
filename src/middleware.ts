@@ -1,35 +1,38 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
-  // Get the path
-  const path = request.nextUrl.pathname;
+export function middleware(req: NextRequest) {
+  const accessToken = req.cookies.get("accessToken")?.value;
 
-  // Define protected routes
-  const protectedRoutes = ["/profile", "/posts"];
-  const authRoutes = ["/login", "/register"];
+  const { pathname } = req.nextUrl;
 
-  // Check if token exists in cookies
-  const hasAccessToken = request.cookies.has("access_token");
+  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isProtectedPage = !isAuthPage;
 
-  // If trying to access protected route without token
-  if (
-    protectedRoutes.some((route) => path.startsWith(route)) &&
-    !hasAccessToken
-  ) {
-    return NextResponse.redirect(new URL("/signin", request.url));
-  }
-
-  // If trying to access auth routes with token
-  if (authRoutes.some((route) => path.startsWith(route)) && hasAccessToken) {
-    return NextResponse.redirect(new URL("/profile", request.url));
+  if (accessToken) {
+    // If user is logged in and tries to access login/register, redirect to profile
+    if (isAuthPage) {
+      return NextResponse.redirect(new URL("/profile", req.url));
+    }
+  } else {
+    // If user is not logged in and tries to access protected pages, redirect to login
+    if (isProtectedPage) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
   }
 
   return NextResponse.next();
 }
 
-// Add config for middleware to specify on which routes it should run
 export const config = {
-  matcher: ["/profile/:path*", "/posts/:path*", "/signin", "/signup"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+  ],
 };
-
-export default middleware;
