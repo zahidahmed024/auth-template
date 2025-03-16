@@ -16,11 +16,11 @@ export async function POST(request: Request) {
 
     headers.append(
       "Set-Cookie",
-      `accessToken=${result.accessToken}; HttpOnly; Path=/; SameSite=Strict;`
+      `accessToken=${result.accessToken}; Path=/; SameSite=Strict;`
     );
     headers.append(
       "Set-Cookie",
-      `refreshToken=${result.refreshToken}; HttpOnly; Path=/; SameSite=Strict;`
+      `refreshToken=${result.refreshToken};  Path=/; SameSite=Strict;`
     );
 
     return new Response(JSON.stringify(result), {

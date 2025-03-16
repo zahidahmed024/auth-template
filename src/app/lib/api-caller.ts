@@ -38,15 +38,21 @@ const fetchClient = async ({
 
     // If unauthorized, we need to refresh token
     if (response.status === 401) {
+      const refreshToken = cook.getCookie("refreshToken");
       // Try to refresh the token
       const refreshResponse = await fetch("/api/auth/refresh", {
         method: "POST",
-        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${refreshToken}`,
+        },
       });
 
       // If refresh failed
       if (!refreshResponse.ok) {
-        window.location.href = "/signin";
+        cook.deleteCookie("accessToken");
+        cook.deleteCookie("refreshToken");
+        window.location.href = "/login";
         throw new Error("Session expired. Please sign in again.");
       }
 
@@ -56,6 +62,10 @@ const fetchClient = async ({
 
     // For 204 No Content responses
     if (response.status === 204) {
+      return null;
+    }
+    if (response.status === 403) {
+      //make token null logout
       return null;
     }
 
